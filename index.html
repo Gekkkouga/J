@@ -158,6 +158,26 @@ header {
   text-align: center;
   font-weight: 600;
   animation: slideDown 0.5s ease;
+  position: relative;
+}
+
+.promo-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.promo-close:hover {
+  background: rgba(255,255,255,0.35);
 }
 
 @keyframes slideDown {
@@ -442,6 +462,16 @@ body.dark-mode .card-meta {
 
 .btn-review:hover {
   background: #e67e22;
+}
+
+.btn-sell {
+  background: #e67e22;
+  color: white;
+  font-size: 12px;
+}
+
+.btn-sell:hover {
+  background: #d35400;
 }
 
 .btn-trade {
@@ -946,6 +976,48 @@ body.dark-mode .wishlist-item {
   }
 }
 
+.booster-result {
+  margin-top: 15px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 14px;
+  color: var(--text-light);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  min-height: 90px;
+}
+
+.news-section {
+  margin-bottom: 30px;
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.news-card {
+  background: var(--card-light);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+}
+
+.news-card h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.news-card p {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #555;
+}
+
+.news-card small {
+  color: #999;
+}
+
 /* ============================= */
 /* ADMIN PANEL */
 /* ============================= */
@@ -1010,11 +1082,31 @@ body.dark-mode .inventory-table th {
   background: #3a3a50;
 }
 
-.inventory-table tr:hover {
-  background: #f9f9f9;
+.requests-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
 
-body.dark-mode .inventory-table tr:hover {
+.requests-grid section {
+  background: #f9f9f9;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+body.dark-mode .requests-grid section {
+  background: #2d2d44;
+}
+
+.request-item {
+  padding: 14px;
+  border-radius: 12px;
+  background: white;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+}
+
+body.dark-mode .request-item {
   background: #3a3a50;
 }
 
@@ -1136,6 +1228,7 @@ footer a:hover {
 <!-- PROMOTIONAL BANNER -->
 <div class="promotional-banner" id="promoBanner">
   🎉 GRAND OPENING SALE! Get 20% OFF on all Pokémon packs! Use code: WELCOME20 🎉
+  <button class="promo-close" onclick="togglePromo()" aria-label="Close promo">×</button>
 </div>
 
 <!-- HEADER -->
@@ -1200,6 +1293,13 @@ footer a:hover {
     <div class="pack-animation" onclick="openBoosterPack()" title="Click to open!">
       BOOSTER PACK
     </div>
+    <div id="boosterResult" class="booster-result" aria-live="polite"></div>
+  </div>
+
+  <!-- NEWS FEED -->
+  <div class="news-section" id="newsSection">
+    <h2>📰 Berita Terbaru</h2>
+    <div class="news-grid" id="newsGrid"></div>
   </div>
 
   <!-- PRODUCT GRID -->
@@ -1232,6 +1332,9 @@ footer a:hover {
     </button>
     <button class="admin-tab" onclick="switchAdminTab('add-product')">
       <i class="fas fa-plus"></i> Add Product
+    </button>
+    <button class="admin-tab" onclick="switchAdminTab('requests')">
+      <i class="fas fa-envelope"></i> Requests
     </button>
   </div>
 
@@ -1302,6 +1405,25 @@ footer a:hover {
       <button type="submit" class="btn-submit" style="width: 100%; padding: 12px;">Add Product</button>
     </form>
   </div>
+
+  <!-- REQUESTS TAB -->
+  <div class="admin-tab-content" id="requestsTab">
+    <h3>Customer Requests</h3>
+    <div class="requests-grid">
+      <section>
+        <h4>Product Reviews</h4>
+        <div id="reviewRequestsList"><p>Belum ada review baru.</p></div>
+      </section>
+      <section>
+        <h4>Trade Requests</h4>
+        <div id="tradeRequestsList"><p>Belum ada trade request.</p></div>
+      </section>
+      <section>
+        <h4>Sell Requests</h4>
+        <div id="sellRequestsList"><p>Belum ada sell request.</p></div>
+      </section>
+    </div>
+  </div>
 </div>
 
 <!-- CART PANEL -->
@@ -1346,6 +1468,10 @@ footer a:hover {
     <div class="summary-row">
       <span>Shipping:</span>
       <span id="shippingCost">Rp 0</span>
+    </div>
+    <div class="summary-row">
+      <span>Server Fee:</span>
+      <span id="serverFee">Rp 0</span>
     </div>
     <div class="summary-row total">
       <span>Total:</span>
@@ -1454,6 +1580,41 @@ footer a:hover {
   </div>
 </div>
 
+<!-- SELL MODAL -->
+<div class="modal" id="sellModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>💰 Sell Your Card</h2>
+      <button class="modal-close" onclick="closeModal('sellModal')">×</button>
+    </div>
+    <form onsubmit="submitSell(event)">
+      <div class="form-group">
+        <label>Card</label>
+        <input type="text" id="sellOffering" disabled>
+      </div>
+      <div class="form-group">
+        <label>Asking Price (Rp)</label>
+        <input type="number" id="sellPrice" required>
+      </div>
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="sellYourName" required>
+      </div>
+      <div class="form-group">
+        <label>Contact Information</label>
+        <input type="email" id="sellContact" placeholder="Email or Phone" required>
+      </div>
+      <div class="form-group">
+        <p style="font-size: 13px; color: #555;">Server cost fee: $0.50 will apply when selling through the platform.</p>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-submit">Send Sell Request</button>
+        <button type="button" class="btn-cancel" onclick="closeModal('sellModal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- FOOTER -->
 <footer>
   <p><strong>PokeCatalog.ID</strong> - Premium Pokémon Trading Hub</p>
@@ -1463,6 +1624,7 @@ footer a:hover {
 </footer>
 
 <script src="app.js"></script>
+<script type="module" src="store.js"></script>
 
 </body>
 </html>
